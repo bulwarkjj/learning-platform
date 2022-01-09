@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.views.generic.list import ListView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from .models import Course
@@ -26,7 +27,7 @@ class OwnerEditMixin(object):
         form.instance.owner = self.request.user
         return super().form_valid(form)
 
-class OwnerCourseMixin(OwnerMixin):
+class OwnerCourseMixin(OwnerMixin, LoginRequiredMixin, PermissionRequiredMixin):
     """
     inherits OwnerMixin for child views
 
@@ -55,20 +56,28 @@ class ManageCourseListView(OwnerCourseMixin, ListView):
 
     args:
         template_name: template to list courses
+        permission_required: restricts views to only users with proper permissions
     """
     template_name = 'courses/manage/course/list.html'
+    permission_required = 'courses.view_course'
 
 class CourseCreateView(OwnerCourseEditMixin, CreateView):
     """
     Uses a model form to create a new Course object
+
+    args:
+        permission_required: restricts views to only users with proper permissions
     """
-    pass
+    permission_required = 'courses.add_course'
 
 class CourseUpdateView(OwnerCourseEditMixin, UpdateView):
     """
     Allows editing of an existing Course object
+
+    args: 
+        permission_required: restricts views to only users with proper permissions
     """
-    pass
+    permission_required = 'courses.change_course'
 
 class CourseDeleteView(OwnerCourseMixin, DeleteView):
     """
@@ -76,6 +85,8 @@ class CourseDeleteView(OwnerCourseMixin, DeleteView):
 
     args:
         template_name: confirms the course deletion 
+        permission_required: restricts views to only users with proper permissions
     """
     template_name = 'courses/manage/course/delete.html'
+    permission_required = 'courses.delete_course'
 
