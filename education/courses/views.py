@@ -4,7 +4,9 @@ from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.views.generic.list import ListView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from .models import Course
+from django.forms.models import modelform_factory
+from django.apps import apps
+from .models import Course, Module, Content
 from .forms import ModuleFormSet
 
 class OwnerMixin(object):
@@ -136,3 +138,64 @@ class CourseModuleUpdateView(TemplateResponseMixin, View):
             formset.save()
             return redirect('manage_course_list')
         return self.render_to_response({'course': self.course, 'formset': formset})
+
+
+class ContentCreateUpdateView(TemplateResponseMixin, View):
+    """
+    Generic approach to handle creating and updating view objects of any content model (text, image, video,file)
+    """
+    module = None
+    model = None
+    obj = None
+    template_name = 'courses/manage/content/form.html'
+
+    def get_model(self, model_name):
+        """
+        Checks given model name is of one content type than obtain class for given model name
+        """
+        if model_name in ['text', 'video', 'image', 'file']:
+            return apps.get_model(app_label='courses', model_name=model_name)
+        return None
+
+    def get_form(self, model, *args, **kwargs):
+        """
+        Building dynamic form which excludes common fields and let other attributes be automatically included
+        """
+        Form = modelform_factory(model, exclude=['owner', 'order', 'created', 'updated'])
+        return Form(*args, **kwargs)
+
+    def dispatch(self, request, module_id, model_name, id=None):
+        """
+        Receives URL parameters and stores them to the corresponding module, model, and content object as class attribute
+        """
+        self.module = get_object_or_404(Module, id=module_id, course_owner=request.user)
+        self.model = self.get_model(model_name)
+        if id:
+            self.obj = get_object_or_404(self.model, id=id, owner=request.user)
+
+        return super().dispatch(request, module_id, model_name, id)
+
+    def get(self, request, module_id, model_name, id=None):
+        """
+        Executes when a GET request is received, builds the model form, otherwise create new object
+        """
+        form = self.get_form(self.model, instance=self.obj)
+        return self.render_to_response({'form': form, 'object': self.obj})
+
+    def post(self, request, module_id, model_name, id=None):
+        """
+        Executes when a POST request is received, builds the model form passing any data/files to it, then validates it
+        if form is valid, create a new object and assign request.user as it's owner
+        if no ID is provided, creates a new object and associates the new content
+        """
+        form = self.get_form(self.model, instance=self.obj, data=request.POST, files=request.FILES)
+
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.owner = request.user
+            obj.save()
+            if not id:
+                # new content
+                Content.objects.create(module=self.module, item=obj)
+            return redirect('module_content_list', self.module.id)
+        return self.render_to_response({'form': form, 'object': self.obj})
