@@ -199,3 +199,17 @@ class ContentCreateUpdateView(TemplateResponseMixin, View):
                 Content.objects.create(module=self.module, item=obj)
             return redirect('module_content_list', self.module.id)
         return self.render_to_response({'form': form, 'object': self.obj})
+
+class ContentDeleteView(View):
+    """
+    Retrieves Content object with given ID and deletes related Content objects
+    """
+    def post(self, request, id):
+        """
+        Deletes Content Object and redirects user to module_content_list URL to list other contents in the module
+        """
+        content =get_object_or_404(Content, id=id, module_course_owner=request.user)
+        module = content.module
+        content.item.delete()
+        content.delete()
+        return redirect('module_content_list', module.id)
