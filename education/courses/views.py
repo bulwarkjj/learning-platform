@@ -213,3 +213,18 @@ class ContentDeleteView(View):
         content.item.delete()
         content.delete()
         return redirect('module_content_list', module.id)
+
+class ModuleContentListView(TemplateResponseMixin, View):
+    """
+    Displays all modules for a course and list the content of a specific module
+    """
+    template_name = 'courses/manage/module/content_list.html'
+
+    def get(self, request, module_id):
+        """
+        Gets the Module object with the given ID of current user and renders the template with the 
+        given module
+        """
+        module = get_object_or_404(Module, id=module_id, course_owner=request.user)
+
+        return self.render_to_response({'module': module})
