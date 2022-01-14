@@ -102,7 +102,7 @@ class CourseModuleUpdateView(TemplateResponseMixin, View):
         TemplateResponseMixin: takes charge of rendering templates and returning an HTTP response
         View: basic class-based view provided by Django
     """
-    template_name = 'course/manage/module/formset.html'
+    template_name = 'courses/manage/module/formset.html'
     course = None
 
     def get_formset(self, data=None):
