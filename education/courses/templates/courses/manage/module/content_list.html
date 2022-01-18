@@ -29,7 +29,7 @@
         <p><a href="{% url 'course_module_update' course.id %}">Edit modules</a></p>
     </div>
     <div class='module'>
-        <h2>MOdule {{ module.order|add:1 }}: {{ module.title }}</h2>
+        <h2>Module {{ module.order|add:1 }}: {{ module.title }}</h2>
         <h3>Module contents:</h3>
 
         <div id='module-contents'>
@@ -46,7 +46,7 @@
                     
              </div>
             {% empty %} 
-              <p>This module has n contents yet.</p>
+              <p>This module has no contents yet.</p>
             {% endfor %}
         </div>
         <h3>Add new content</h3>
